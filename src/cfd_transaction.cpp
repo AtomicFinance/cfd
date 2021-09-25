@@ -22,6 +22,7 @@
 #include "cfdcore/cfdcore_logger.h"
 #include "cfdcore/cfdcore_script.h"
 #include "cfdcore/cfdcore_transaction.h"
+#include "cfdcore_wally_util.h"  // NOLINT
 
 namespace cfd {
 
@@ -841,6 +842,24 @@ bool TransactionController::VerifyInputSignature(
       txid, vout, script, sighash_type, value, version);
   return SignatureUtil::VerifyEcSignature(
       ByteData256(sighash.GetBytes()), pubkey, signature);
+}
+
+// -----------------------------------------------------------------------------
+// SignatureUtil
+// -----------------------------------------------------------------------------
+std::vector<ByteData> TransactionController::CalculateEcSignatures(
+    const std::vector<core::ByteData256> &signature_hashes, const Privkey &private_key,
+    bool has_grind_r) const {
+
+  std::vector<ByteData> signatures;
+  signatures.reserve(signature_hashes.size());
+
+  for (auto sighash : signature_hashes) {
+    signatures.push_back(SignatureUtil::CalculateEcSignature(
+      core::ByteData256(sighash), private_key, has_grind_r));
+  }
+
+  return signatures;
 }
 
 }  // namespace cfd
