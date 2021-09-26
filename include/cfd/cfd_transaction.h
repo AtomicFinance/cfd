@@ -824,7 +824,7 @@ class CFD_EXPORT TransactionController
       WitnessVersion version = WitnessVersion::kVersionNone) const;
 
   std::vector<ByteData> CalculateEcSignatures(
-    const std::vector<core::ByteData256> &signature_hashes, const Privkey &private_key,
+    const std::vector<ByteData> &signature_hashes, const Privkey &private_key,
     bool has_grind_r) const;
 
  private:

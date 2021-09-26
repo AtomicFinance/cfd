@@ -109,7 +109,7 @@ TEST(TransactionController, VerifyInputSignature_TEST_PKH) {
   EXPECT_NO_THROW(signature = SignatureUtil::CalculateEcSignature(
       ByteData256(sighash.GetBytes()), privkey));
   EXPECT_NO_THROW(txc.CalculateEcSignatures(
-      {ByteData256(sighash.GetBytes())}, privkey, true));
+      {sighash.GetBytes()}, privkey, true));
 
   EXPECT_TRUE(txc.VerifyInputSignature(signature, pubkey, txid, vout,
       sighash_type));
