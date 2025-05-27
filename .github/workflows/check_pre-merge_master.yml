@@ -37,11 +37,7 @@ jobs:
 
   cmake-mac-test:
     name: cmake build-mac
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [macos-10.15]
-#        os: [macos-10.15, macos-11.0]
+    runs-on: self-hosted
 
     steps:
     - uses: actions/checkout@v2
@@ -63,12 +59,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-20.04, ubuntu-18.04]
+        os: [ubuntu-22.04]
         shared: [on, off]
         elements: [on, off]
-        exclude:
-          - os: ubuntu-18.04
-            elements: off
 
     steps:
     - uses: actions/checkout@v2
@@ -91,7 +84,7 @@ jobs:
 
   doxygen-ubuntu:
     name: doxygen-check
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
 
     steps:
     - uses: actions/checkout@v2
