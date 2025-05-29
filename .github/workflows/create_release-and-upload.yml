@@ -8,7 +8,7 @@ on:
 jobs:
   create_releases:
     name: create-releases
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
     outputs:
       release_url: ${{ steps.output_url.outputs.upload_url }}
 
@@ -116,12 +116,10 @@ jobs:
   upload-object-ubuntu:
     name: upload-object-ubuntu
     needs: create_releases
-    runs-on: ubuntu-${{ matrix.os_ver }}.04
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
-#        os: [ubuntu-20.04, ubuntu-18.04]
-        os_ver: [20, 18]
         bin: [gcc, gcc-static]
         include:
           - bin: gcc
@@ -163,13 +161,13 @@ jobs:
       with:
         upload_url: ${{ steps.get_url.outputs.upload_url }}
         asset_path: ./dist/cfd.zip
-        asset_name: cfd-${{ steps.get_version.outputs.VERSION }}-ubuntu${{ matrix.os_ver }}04-${{ matrix.bin }}-x86_64.zip
+        asset_name: cfd-${{ steps.get_version.outputs.VERSION }}-ubuntu2204-${{ matrix.bin }}-x86_64.zip
         asset_content_type: application/zip
 
   upload-object-alpine:
     name: upload-object-alpine
     needs: create_releases
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
@@ -231,11 +229,10 @@ jobs:
   upload-object-macos:
     name: upload-object-macos
     needs: create_releases
-    runs-on: macos-10.15
+    runs-on: self-hosted
     strategy:
       fail-fast: false
       matrix:
-        xcode: [10.3, 11.7, 12.4]
         shared: [on, off]
         include:
           - shared: on
@@ -249,22 +246,26 @@ jobs:
     - name: Get the version
       id: get_version
       run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
-    - name: Select Xcode version
-      run: sudo xcode-select -s '/Applications/Xcode_${{ matrix.xcode }}.app/Contents/Developer'
     - name: Show Xcode version
       run: xcodebuild -version
     - name: cmake-build
       run: |
-        mkdir dist
-        mkdir build
-        cd build
-        cmake .. -DENABLE_SHARED=${{ matrix.shared }} -DENABLE_TESTS=off -DENABLE_JS_WRAPPER=off -DCMAKE_BUILD_TYPE=Release -DTARGET_RPATH="/usr/local/lib;@executable_path;./build/Release"
-        cd ..
-        cmake --build build --parallel 2 --config Release
-        cd build
-        sudo make install DESTDIR=../dist
-        cd ..
+        echo "=== Cleaning up previous build ==="
+        rm -rf dist build || true
+        mkdir -p dist build
+        echo "=== Starting CMake configure ==="
+        cmake -S . -B build -DENABLE_SHARED=${{ matrix.shared }} -DENABLE_TESTS=off -DENABLE_JS_WRAPPER=off -DCMAKE_BUILD_TYPE=Release -DTARGET_RPATH="/usr/local/lib;@executable_path;./build/Release" -DCMAKE_INSTALL_PREFIX="${PWD}/dist/usr/local"
+        echo "=== Starting CMake build ==="
+        cmake --build build --parallel 4 --config Release
+        echo "=== Build completed successfully ==="
       timeout-minutes: 40
+    - name: cmake-install
+      run: |
+        echo "=== Starting CMake install ==="
+        cmake --install build
+        echo "=== Install completed ==="
+        ls -la dist/
+      timeout-minutes: 10
     - name: create archive file
       run: |
         cd dist
@@ -281,5 +282,5 @@ jobs:
       with:
         upload_url: ${{ steps.get_url.outputs.upload_url }}
         asset_path: ./dist/cfd.zip
-        asset_name: cfd-${{ steps.get_version.outputs.VERSION }}-osx-xcode${{ matrix.xcode }}${{ matrix.suffix }}-x86_64.zip
+        asset_name: cfd-${{ steps.get_version.outputs.VERSION }}-osx${{ matrix.suffix }}-arm64.zip
         asset_content_type: application/zip
